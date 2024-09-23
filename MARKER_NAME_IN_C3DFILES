@@ -1,0 +1,55 @@
+% Specify the input and output folder paths
+inputFolder = 'F:\Project \C3D'; % Input folder containing C3D files
+outputFolder = 'F:\Project \modified_c3d\'; % Output folder for modified files
+
+% Create output folder if it doesn't exist
+if ~exist(outputFolder, 'dir')
+    mkdir(outputFolder);
+end
+
+% Get list of all C3D files in the input folder
+c3dFiles = dir(fullfile(inputFolder, '*.c3d'));
+
+% Loop through each C3D file
+for i = 1:length(c3dFiles)
+    % Construct full file path
+    inputFile = fullfile(inputFolder, c3dFiles(i).name);
+    disp(['Processing file: ' c3dFiles(i).name]);
+
+    % Load the C3D file
+    acq = btkReadAcquisition(inputFile);
+    % Get the current marker names
+    markers = btkGetMarkers(acq);
+    markerNames = fieldnames(markers);
+
+    % Display all marker names
+    disp('Current markers:');
+    disp(markerNames);
+
+    % Step 2: Change the marker name
+    oldMarkerName = 'l heel';  % Name with a space as shown in Mokka
+    newMarkerName = 'l_heel';   % Desired new name
+
+    % Check if the marker with space exists
+    markerIndex = find(strcmp(markerNames, 'l_heel')); % Check with underscore first
+
+    if isempty(markerIndex)
+        % If not found with underscore, try with space
+        markerIndex = find(strcmp(markerNames, oldMarkerName));
+    end
+
+    if ~isempty(markerIndex)
+        % Rename the marker
+        btkSetPointLabel(acq, markerIndex, newMarkerName);
+        disp(['Marker "' oldMarkerName '" renamed to "' newMarkerName '".']);
+    else
+        disp(['Marker "' oldMarkerName '" not found.']);
+    end
+
+    % Write the modified C3D file to the output folder
+    outputFile = fullfile(outputFolder, ['modified_' c3dFiles(i).name]);  % Prefix "modified_" to the output file name
+    btkWriteAcquisition(acq, outputFile);
+    disp(['Modified C3D file saved as: ' outputFile]);
+end
+
+disp('All files processed.');
